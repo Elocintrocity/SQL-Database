@@ -1,0 +1,210 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using MySql.Data.MySqlClient;
+using System.Data.SqlClient;
+
+namespace ConservatoryApp
+{
+    public partial class ConservatoryForm : Form
+    {
+        //things left to work on:
+        //3) title text
+        //4) better selection overall
+        //5) make it cooler looking
+        private DataTable sTable = new DataTable();
+        private MySqlCommand cmd;
+        MySqlDataAdapter dA;
+        private DataSet ds = new DataSet();
+        private string constr = @"server=localhost;database=plant;user=Nicole;password=technology;";
+        public ConservatoryForm()
+        {
+            InitializeComponent();
+        }
+
+        private void ConservatoryForm_Load(object sender, EventArgs e)
+        {
+            string str = @"server=localhost;database=plant;user=Nicole;password=technology;";
+            MySqlConnection con = new MySqlConnection(str);
+            con.Open();
+            DialogResult d = MessageBox.Show("Connected to Plant Database!", "Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            StringBuilder sql = new StringBuilder("Select * from piante");
+            string sqlc = sql.ToString();
+            cmd = new MySqlCommand(sqlc, con);
+            dA = new MySqlDataAdapter(cmd);
+            MySqlCommandBuilder cB = new MySqlCommandBuilder(dA);
+            dA.Fill(ds, "piante");
+            dataGridView1.DataSource = ds.Tables[0];
+            //show initial count
+            ReCount();
+            con.Close();
+
+        }
+        private void ReCount()
+        {
+            int count = dataGridView1.RowCount;
+            string countq = count.ToString();
+            txtCount.Text = countq;
+        }
+        private void dataGridView1_CellMouseDoubleClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            //DialogResult d = MessageBox.Show("Congrats You Have Tried To See the Image!", "Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            int rowindex = dataGridView1.CurrentCell.RowIndex;
+            int columnindex = 2;
+            string a = dataGridView1.Rows[rowindex].Cells[columnindex].Value.ToString();
+            ShowImage(a);
+            string com = dataGridView1.Rows[rowindex].Cells[3].Value.ToString();
+            txtImageTitle.Text = com;
+        }
+        private void ShowImage(string a)
+        {
+            switch (a)
+            {
+                case "Acer rubrum":
+                    picSpace.Image = Image.FromFile("Acerrubrum.gif");
+                    break;
+                case "Astragalus agrestis":
+                    picSpace.Image = Image.FromFile("Astragalusagrestis.gif");
+                    break;
+                case "Calliandra eriophylla":
+                    picSpace.Image = Image.FromFile("Calliandraeriophylla.gif");
+                    break;
+                case "Eschscholzia californica":
+                    picSpace.Image = Image.FromFile("Eschscholziacalifornica.gif");
+                    break;
+                case "Galium boreale":
+                    picSpace.Image = Image.FromFile("Galiumboreale.gif");
+                    break;
+                case "Linum lewisii":
+                    picSpace.Image = Image.FromFile("Linumlewisii.gif");
+                    break;
+                case "Lupinus luteolus":
+                    picSpace.Image = Image.FromFile("Lupinusluteolus.gif");
+                    break;
+                case "Rubus arcticus":
+                    picSpace.Image = Image.FromFile("Rubusarcticus.gif");
+                    break;
+                case "Vitis monticola":
+                    picSpace.Image = Image.FromFile("Vitismonticola.gif");
+                    break;
+                case "Waldsteinia idahoensis":
+                    picSpace.Image = Image.FromFile("Waldsteiniaidahoensis.gif");
+                    break;
+                default:
+                    //DialogResult d = MessageBox.Show("The Conservatory does not have this plant's image!" +
+                        //" Make sure you are double clicking the SciName when viewing the picture for that plant." +
+                        //" Check the reference list for available images.", "Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    picSpace.Image = Image.FromFile("defaultpic.gif");
+                    break;
+            }
+        }
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            string searchparam = txtSearch.Text;
+            using (MySqlConnection connection = new MySqlConnection(constr))
+            {
+                using (MySqlCommand command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT * FROM piante WHERE ComName LIKE '%" + searchparam + "%';";
+                    connection.Open();
+                    command.ExecuteNonQuery();
+                    connection.Close();
+                }
+            }
+            ds = new DataSet();
+         
+            MySqlConnection con = new MySqlConnection(constr);
+            con.Open();
+            //MessageBox.Show("Search has been executed.");
+            StringBuilder sql = new StringBuilder("SELECT * FROM piante WHERE ComName LIKE '%" + searchparam + "%';");
+            string sqlc = sql.ToString();
+            cmd = new MySqlCommand(sqlc, con);
+            dA = new MySqlDataAdapter(cmd);
+            MySqlCommandBuilder cB = new MySqlCommandBuilder(dA);
+            dA.Fill(ds, "piante");
+            dataGridView1.DataSource = ds.Tables[0];
+            ReCount();
+            con.Close();
+        }
+        private void btnPrevious_Click(object sender, EventArgs e)
+        {
+            //dgv[column,row]
+            int numOfRows = dataGridView1.Rows.Count - 1;
+            //Get current row selected
+            //int index = dataGridView1.SelectedRows[0].Index;
+            int index = dataGridView1.CurrentRow.Index;
+            if (index <= numOfRows && index!=0)
+            {
+                dataGridView1.CurrentCell = dataGridView1[0, index - 1];
+                int rowindex = dataGridView1.CurrentCell.RowIndex;
+                int columnindex = 2;
+                string a = dataGridView1.Rows[rowindex].Cells[columnindex].Value.ToString();
+                ShowImage(a);
+                string com = dataGridView1.Rows[rowindex].Cells[columnindex+1].Value.ToString();
+                txtImageTitle.Text = com;
+            }
+                
+            else
+            {
+                dataGridView1.CurrentCell = dataGridView1[0, numOfRows];
+                int rowindex = dataGridView1.CurrentCell.RowIndex;
+                int columnindex = 2;
+                string a = dataGridView1.Rows[rowindex].Cells[columnindex].Value.ToString();
+                ShowImage(a);
+                txtImageTitle.Text = dataGridView1.Rows[rowindex].Cells[columnindex + 1].Value.ToString();
+                txtImageTitle.Show();
+            }
+        }
+        private void btnNext_Click(object sender, EventArgs e)
+        {
+            //subtract one to keep in line with index that starts with 0
+            int numOfRows = dataGridView1.Rows.Count - 1;
+            //Get current row selected
+            //int index = dataGridView1.SelectedRows[0].Index;
+            int index = dataGridView1.CurrentRow.Index;
+            if (index < numOfRows)  
+            {
+                dataGridView1.CurrentCell = dataGridView1[0, index + 1];
+                int rowindex = dataGridView1.CurrentCell.RowIndex;
+                int columnindex = 2;
+                string a = dataGridView1.Rows[rowindex].Cells[columnindex].Value.ToString();
+                ShowImage(a);
+                string com = dataGridView1.Rows[rowindex].Cells[3].Value.ToString();
+                txtImageTitle.Text = com;
+            }
+                
+            else
+            {
+                dataGridView1.CurrentCell = dataGridView1[0, 0];
+                int rowindex = dataGridView1.CurrentCell.RowIndex;
+                int columnindex = 2;
+                string a = dataGridView1.Rows[rowindex].Cells[columnindex].Value.ToString();
+                ShowImage(a);
+                string com = dataGridView1.Rows[rowindex].Cells[3].Value.ToString();
+                txtImageTitle.Text = com;
+            }
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void dataGridView1_DoubleClick(object sender, EventArgs e)
+        {
+            //MessageBox.Show("You've double clicked.");
+            //int row = dataGridView1.CurrentRow.Index;
+
+
+        }
+
+ 
+
+    }
+}
